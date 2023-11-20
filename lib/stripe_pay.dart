@@ -3,27 +3,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
 
-class MyGooglePay extends StatefulWidget {
-  const MyGooglePay({super.key});
+class StripePay extends StatefulWidget {
+  const StripePay({super.key});
 
   @override
-  State<MyGooglePay> createState() => _MyGooglePayState();
+  State<StripePay> createState() => _StripePayState();
 }
 
-class _MyGooglePayState extends State<MyGooglePay> {
+class _StripePayState extends State<StripePay> {
 
  Map<String, dynamic>? paymentIntent;
 
- void makePayment() async{
+ void    makePayment() async{
    try{
      paymentIntent = await createPaymentIntent();
-     var gpay = PaymentSheetGooglePay(merchantCountryCode: "US",
-       currencyCode: "US",
+     var gpay = const PaymentSheetGooglePay(merchantCountryCode: "US",
+       currencyCode: "IND",
        testEnv: true,
      );
 
+     // await Stripe.instance.initCustomerSheet(customerSheetInitParams:
+     // const CustomerSheetInitParams(customerId: '123', customerEphemeralKeySecret: 'Hello',
+     //   merchantDisplayName: "Darshit"
+     //
+     // ));
      await Stripe.instance.initPaymentSheet(paymentSheetParameters: SetupPaymentSheetParameters(
-       paymentIntentClientSecret: paymentIntent!["client_secret"],
+       paymentIntentClientSecret: paymentIntent?["client_secret"],
        style: ThemeMode.dark,
        merchantDisplayName: "Darshit",
        googlePay: gpay,
@@ -31,24 +36,28 @@ class _MyGooglePayState extends State<MyGooglePay> {
      displayPaymentSheet();
 
    }catch(e){
-     print("Failed");
+     debugPrint("Failed");
    }
  }
 
  void displayPaymentSheet() async{
    try{
      await Stripe.instance.presentPaymentSheet();
-     print("Done");
+     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+       content: Center(child: Text("Payment Successful")),
+       padding: EdgeInsets.all(10),
+       backgroundColor: Colors.green,));
+     debugPrint("Done");
    } catch(e){
-     print("Failed");
+     debugPrint("Failed");
    }
  }
 
   createPaymentIntent() async{
    try{
      Map<String, dynamic> body = {
-       "amount": "100",
-       "currency": "USD",
+       "amount": "10000",
+       "currency": "INR",
      };
 
      http.Response response = await http.post(Uri.parse("https://api.stripe.com/v1/payment_intents"),
@@ -58,6 +67,7 @@ class _MyGooglePayState extends State<MyGooglePay> {
          "Content-Type": "application/x-www-form-urlencoded",
        }
      );
+     debugPrint(response.body);
      return json.decode(response.body);
    } catch(e){
      throw Exception(e.toString());
@@ -68,28 +78,14 @@ class _MyGooglePayState extends State<MyGooglePay> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Stripe Payment"),
+        title: const Text("Stripe Payment"),
         centerTitle: true,
       ),
       body: Center(
         child: ElevatedButton(onPressed: (){
           makePayment();
-        }, child: Text("Stripe Pay")),
+        }, child: const Text("Stripe Pay")),
       ),
     );
   }
 }
-
-// var _paymentItems = [
-//   PaymentItem(
-//     label: 'Total',
-//     amount: '99.99',
-//     status: PaymentItemStatus.final_price,
-//   )
-// ];
-// GooglePayButton(
-// paymentConfigurationAsset: 'sample_payment_configuration.json',
-// paymentItems: _paymentItems,
-// type: GooglePayButtonType.pay,
-// onPaymentResult: onGooglePayResult,
-// ),
